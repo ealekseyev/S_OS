@@ -6,7 +6,7 @@
  - Kernelspace/Userspace
  - Protected Memory
  - Terminal Prompt with shell language similar to zsh
- - smart process-switching
+ - Smart process-switching
  - (Eventually) an emulated gcc compiler ported from Linux
  
  ## Development hardware/software
