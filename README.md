@@ -10,5 +10,5 @@
  - (Eventually) an emulated gcc compiler ported from Linux
  
  ## Development hardware/software
-- QEMU64 on Linux
+- QEMU x86-64
 - 2014 Macbook Pro 13", Intel Core i5 dual-core processor
