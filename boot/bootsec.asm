@@ -14,24 +14,24 @@ section .text
 _start:
   mov si, Bootstrap
   call print
+  cli
 
-; enable 20th bit - 1M memory
-  mov si, Bootstrap
-  call print
-  mov ax, 0x2401
-  int 0x15
+  call check32
+  cmp dl, 1
+  jz boot16
 
-; setting up vga mode
-  mov ax, 0x3
-  int 0x10 ; set vga text mode 3
- ; mov bx, 167
- ; call printhex
+  call check64
+  cmp dl, 1
+  je boot64
+  jz boot32
+
   jmp $
 
 %include "bprint.asm"
+%include "cpuid.asm"
+%include "bootk.asm"
 
 Bootstrap: db "Loading S_OS...", 10, 13, 0
-EnableA20: db "Enabling A20 bit...", 10, 13, 0
 
 times 510-($-$$) db 0
 dw 0xaa55

@@ -1,22 +1,17 @@
-[org 0x7c00]
-[bits 16]
-
-mov bx, 1824
-call printhex
-
 print:
   pusha
   mov ah, 0x0e
+  mov al, [si]
   printch:
-    mov al, [si]
     int 0x10
     add si, 1
+    mov al, [si]
     cmp al, 0
     jne printch
     popa
     ret
 
-;TODO: nasm doesnt like this.
+
 ; convert and print int to hex
 ;printhex: ; take bx as argument for 16 bit int, print as hex form
 ;  push dx ; push pref data val to stack
