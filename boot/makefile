@@ -1,4 +1,4 @@
-bootsec.bin: bprint.asm bdisk.asm bloadk.asm
+bootsec.bin: cpuid.asm bprint.asm bootk.asm
 	nasm -f bin bootsec.asm -o bootsec.bin
 clean:
 	rm -f *.bin 

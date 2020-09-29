@@ -14,24 +14,39 @@ section .text
 _start:
   mov si, Bootstrap
   call print
-  cli
 
-  call check32
-  cmp dl, 1
-  jz boot16
+  call checkcpuid       ; check if the given system supports cpuid
+  cmp eax, 0            ;possibly unnecessary
+  je cpuidNotSupported
+  jne cpuidSupported
+  mov si, UError
+  call print
 
-  call check64
-  cmp dl, 1
-  je boot64
-  jz boot32
+  cpuidNotSupported: ; if not supported, hang
+    mov si, Nocpuid
+    call print
+    jmp $
+  cpuidSupported: ; if cpuid is supported, test for various bit modes
+    mov eax, 0
+    cpuid
+    call printvendid
+    ;call printvendid
+    ;call printvendid
+    ;cmp dl, 1
+    ;jne boot16
 
-  jmp $
+    ;call check64
+    ;cmp dl, 1
+    ;je boot64
+    ;jne boot32
+    jmp $
 
 %include "bprint.asm"
 %include "cpuid.asm"
-%include "bootk.asm"
 
 Bootstrap: db "Loading S_OS...", 10, 13, 0
+Nocpuid: db "E: No CPUID", 10, 13, 0
+UError: db "E: unknown", 10, 13, 0
 
 times 510-($-$$) db 0
 dw 0xaa55

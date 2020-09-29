@@ -2,16 +2,38 @@ print:
   pusha
   mov ah, 0x0e
   mov al, [si]
-  printch:
+  _printch:
     int 0x10
     add si, 1
     mov al, [si]
     cmp al, 0
-    jne printch
+    jne _printch
     popa
     ret
 
+printvendid:
+  pusha
+  mov edx, eax
+  call _printidch
+  mov edx, ebx
+  call _printidch
+  mov edx, ecx
+  call _printidch
+  popa
+  ret
+  _printidch:
+    mov si, 4     ; bytes per register; 32-bit 
+    printsubroutine:
+      int 0x10
+      shr edx, 4
+      mov al, dl
+      dec si
+      cmp si, 0
+      jne printsubroutine
+      ret
 
+  
+  
 ; convert and print int to hex
 ;printhex: ; take bx as argument for 16 bit int, print as hex form
 ;  push dx ; push pref data val to stack
