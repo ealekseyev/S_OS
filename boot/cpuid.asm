@@ -1,16 +1,23 @@
-check32:
-    ; blah blah blah
-    mov eax, 0
+transferbybits:
+    mov eax, 0x80000001         ; code for getting cpu bit count (32 vs 64)
     cpuid
-    call printvendid
-    mov dl, 1 ; 1 = 32 bit pmode and 16bit pmode, 0 = just 16bit pmode
-    ret
+    and edx, 0x20000000         ; only preserve the 29th bit (30th in regular counting)
+    shr edx, 29                 ; shift 29th bit to 1st bit
+    cmp edx, 1                  ; zero if not 64, one if 64 bit is supported
+    je bits64proc               ; if 64 bits, transfer control
+    jmp bits32proc              ; if 32-bit, jump to bits32proc
 
-check64:
-    ; blah blah blah
-    mov eax, 0 
-    mov dl, 1 ; 0 = no long mode, 1 = 64bit compatible
-    ret
+bits64proc:
+    mov si, bits64print
+    call print
+    jmp $
+bits32proc:
+    mov si, bits32print
+    call print
+    jmp $
+
+;bits16proc:
+;    jmp $
 
 checkcpuid:
     pushfd                      ;Save EFLAGS
@@ -23,3 +30,7 @@ checkcpuid:
     popfd                       ;Restore original EFLAGS
     and eax,0x00200000          ;eax = zero if ID bit can't be changed, else non-zero
     ret
+
+bits64print: db "Your CPU is 64-bit.", 10, 13, 0
+bits32print: db "Your CPU is 32-bit.", 10, 13, 0
+bits16print: db "Your CPU is 16-bit.", 10, 13, 0

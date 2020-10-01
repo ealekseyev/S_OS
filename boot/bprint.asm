@@ -11,61 +11,93 @@ print:
     popa
     ret
 
+printfromreg:
+  push edx      ; data is in here
+  push cx       ; counter
+  mov cx, 4     ; bytes per register; 32-bit. this is the counter
+  mov ah, 0x0e  ; bios print mode
+  bswap edx     ; swap bytes in 32 bit register. otherwise will be printed in lsb order
+  _printregch:
+    mov al, dl
+    int 0x10
+    shr edx, 8  ; next char
+    dec cx
+    cmp cx, 0
+    jne _printregch ; loop back again
+    pop edx
+    pop cx
+    ret
+
 printvendid:
   pusha
-  mov edx, eax
+  mov esi, ebx
   call _printidch
-  mov edx, ebx
+  mov esi, edx
   call _printidch
-  mov edx, ecx
+  mov esi, ecx
   call _printidch
   popa
   ret
   _printidch:
-    mov si, 4     ; bytes per register; 32-bit 
-    printsubroutine:
+    mov di, 4    ; bytes per register; 32-bit 
+    _printsubroutine:
+      mov ax, si
+      mov ah, 0x0e
       int 0x10
-      shr edx, 4
-      mov al, dl
-      dec si
-      cmp si, 0
-      jne printsubroutine
+      shr esi, 8
+      dec di
+      cmp di, 0
+      jne _printsubroutine
       ret
 
-  
-  
-; convert and print int to hex
-;printhex: ; take bx as argument for 16 bit int, print as hex form
-;  push dx ; push pref data val to stack
-;  push ax ; push prev ah and al vals to stack
-;  push cl ; counter
-;  mov ah, 0x0e ; put bios in print mode
-;  mov cl, 12
-;  call _printhexch
-;  ret
-;
-;  _printhexch:
-;    mov dx, bx ; copy value to dx
-;    shl dx, 12-cl ;-cl ; get rid of hex before
-;    shr dx, 12 ; remove all but 0 thru 16 = one hex digit
-;    cmp dx, 10 ; will determine if the digit is a char or digit
-;
-;    jl _printdigit ; if less than 10, jump to printdigit
-;    jmp _printchar ; else print the char
-;    _printdigit:
-;      mov al, dx+48 ; shift digit to ascii format
-;      int 0x10
-;      jmp _cycle
-;    _printchar:
-;      mov al, dx+87 ; 97 (ascii a) - 10 (regular number digits)
-;      int 0x10
-;      jmp _cycle
-;    _cleanup:
-;      pop dx ; reset all registers to prev state and exit _printhexch
-;      pop ax
-;      pop cl
-;      ret
-;    _cycle:
-;      jcxz _cleanup ; jump if the counter is done (zero)
-;      sub cl, 0x04 ; if counter is not done, subtract and jump back
-;      jmp _printhexch
+printhex:
+  push ax            ; bios print buf
+  push dx            ; hex num
+  push cx            ; counter
+  mov ah, 0x0e       ; put bios in print mode
+  mov cx, 16 / 4     ; 16 = bits to print
+  xchg dh, dl        ; reverse the two bytes; otherwise hex will in reverse order
+
+  push bx            ; reverse the 4 subbytes in each register
+  mov bh, dh
+  shr bh, 4          ; lsb of bh holds the top 4 bits now
+  shl dh, 4
+  or dh, bh          ; string the bits together
+
+  mov bl, dl
+  shr bl, 4          ; lsb of bh holds the top 4 bits now
+  shl dl, 4
+  or dl, bl          ; string the bits together
+  pop bx             ; we are done with bx
+
+    _printhex:
+    push dx
+    and dx, 0x000F   ; compare 4 rightmost bits
+
+    cmp dx, 10
+    jl _printhexdig  ; print the hex char whether it is a digit or a character
+    jmp _printhexch   ; also remember where to jump back to
+
+    _continue:
+    pop dx           ; get the original hex back
+    shr dx, 4        ; shift 4 bits to the right (next hex digit)
+
+    dec cl 
+    cmp cl, 0
+    jne _printhex    ; jump back if not done, else proceed and exit
+
+    pop cx           ; bios print buf
+    pop dx           ; hex num
+    pop ax           ; counter
+    ret
+
+  _printhexch:       ; print a 4 bit hex char
+    add dl, 87       ; dl+97-10; shift to ascii lowercase letter
+    mov al, dl 
+    int 0x10
+    jmp _continue
+  _printhexdig:      ; print a 4 bit hex numerical digit
+    add dl, 48       ; shift to ascii number
+    mov al, dl       
+    int 0x10
+    jmp _continue

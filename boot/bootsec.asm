@@ -12,14 +12,14 @@ section .text
 	global _start
 
 _start:
-  mov si, Bootstrap
-  call print
+  ;mov si, Bootstrap
+  ;call print
 
   call checkcpuid       ; check if the given system supports cpuid
-  cmp eax, 0            ;possibly unnecessary
+  cmp eax, 0            ; possibly unnecessary
   je cpuidNotSupported
   jne cpuidSupported
-  mov si, UError
+  mov si, UError        ; if it didnt jump, say so
   call print
 
   cpuidNotSupported: ; if not supported, hang
@@ -29,9 +29,13 @@ _start:
   cpuidSupported: ; if cpuid is supported, test for various bit modes
     mov eax, 0
     cpuid
-    call printvendid
-    ;call printvendid
-    ;call printvendid
+    mov si, Vendidstr
+    call print
+    call printvendid ; print the vendor id; qemu returns AuthenticAMD or GenuineIntel
+    mov edx, 0x0A0D  ; newline
+    call printfromreg
+    jmp transferbybits
+
     ;cmp dl, 1
     ;jne boot16
 
@@ -41,12 +45,14 @@ _start:
     ;jne boot32
     jmp $
 
-%include "bprint.asm"
 %include "cpuid.asm"
+%include "bprint.asm"
 
 Bootstrap: db "Loading S_OS...", 10, 13, 0
 Nocpuid: db "E: No CPUID", 10, 13, 0
 UError: db "E: unknown", 10, 13, 0
+Vendidstr: db "CPU vendor ID: "
+;Hex: db "0x", 0
 
 times 510-($-$$) db 0
 dw 0xaa55

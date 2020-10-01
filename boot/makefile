@@ -4,3 +4,5 @@ clean:
 	rm -f *.bin 
 run:
 	qemu-system-x86_64 bootsec.bin
+run32:
+	qemu-system-i386 bootsec.bin
